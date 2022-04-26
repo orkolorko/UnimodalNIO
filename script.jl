@@ -1,11 +1,7 @@
-using Distributed
+alphas = 2:0.1:8
+epsilons = 0:0.01:1.0
 
-addprocs(2)
-
-alphas = 2:0.1:3
-epsilons = 0:0.01:0.1
-
-@everywhere begin 
+begin 
     n = 10000
     n_exp = 200
 
@@ -64,17 +60,16 @@ epsilons = 0:0.01:0.1
     end
 end
 
-using SharedArrays
-lyapgrid_shared = SharedArray{Float64}((length(alphas), length(epsilons)))
+lyapgrid = Array{Float64,2}(undef, length(alphas), length(epsilons))
 
 for i in 1:length(alphas)
     println(alphas[i])
     T = x-> T_alpha(alphas[i], x)
     T_prime = x-> T_prime_alpha(alphas[i], x)
-    @distributed for j in 1:length(epsilons)
-        lyapgrid_shared[i, j] = compute_avg_lyap(epsilons[j], n, n_exp, T, T_prime)
+    for j in 1:length(epsilons)
+        lyapgrid[i, j] = compute_avg_lyap(epsilons[j], n, n_exp, T, T_prime)
     end
 end
 
 using JLD
-save("lyapgrid_shared.jld", "lyapgrid_shared", lyapgrid_shared)
+save("lyapgrid.jld", "lyapunov_grid", lyapgrid)
